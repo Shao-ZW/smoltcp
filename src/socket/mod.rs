@@ -88,6 +88,14 @@ impl<'a> Socket<'a> {
             Socket::Dns(s) => s.poll_at(cx),
         }
     }
+
+    pub(crate) fn into_tcpsocket(self) -> Option<tcp::Socket<'a>> {
+        match self {
+            #[cfg(feature = "socket-tcp")]
+            Socket::Tcp(s) => Some(s),
+            _ => None,
+        }
+    }
 }
 
 /// A conversion trait for network sockets.

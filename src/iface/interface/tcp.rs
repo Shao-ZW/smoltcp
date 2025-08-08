@@ -1,3 +1,5 @@
+use core::net;
+
 use super::*;
 
 use crate::socket::tcp::Socket;

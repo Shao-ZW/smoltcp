@@ -718,7 +718,7 @@ impl Interface {
                     })
                 }
                 #[cfg(feature = "socket-tcp")]
-                Socket::Tcp(socket) => socket.dispatch(&mut self.inner, |inner, (ip, tcp)| {
+                Socket::Tcp(socket) => socket.dispatch(&mut self.inner, &mut |inner, (ip, tcp)| {
                     respond(
                         inner,
                         PacketMeta::default(),

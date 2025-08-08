@@ -365,6 +365,20 @@ impl Endpoint {
 }
 
 #[cfg(all(feature = "proto-ipv4", feature = "proto-ipv6"))]
+impl From<Endpoint> for ::core::net::SocketAddr {
+    fn from(x: Endpoint) -> ::core::net::SocketAddr {
+        match ::core::net::IpAddr::from(x.addr) {
+            ::core::net::IpAddr::V4(ipv4) => {
+                ::core::net::SocketAddr::V4(::core::net::SocketAddrV4::new(ipv4, x.port))
+            }
+            ::core::net::IpAddr::V6(ipv6) => {
+                ::core::net::SocketAddr::V6(::core::net::SocketAddrV6::new(ipv6, x.port, 0, 0))
+            }
+        }
+    }
+}
+
+#[cfg(all(feature = "proto-ipv4", feature = "proto-ipv6"))]
 impl From<::core::net::SocketAddr> for Endpoint {
     fn from(x: ::core::net::SocketAddr) -> Endpoint {
         Endpoint {

@@ -1978,6 +1978,9 @@ impl<'a> Socket<'a> {
                     for (_, socket) in self.backlog.as_mut().unwrap().iter_mut() {
                         let socket = Socket::downcast_mut(socket).unwrap();
                         if socket.accepts(cx, ip_repr, repr) {
+                            #[cfg(feature = "async")]
+                            self.rx_waker.wake();
+
                             return socket.process(cx, ip_repr, repr);
                         }
                     }

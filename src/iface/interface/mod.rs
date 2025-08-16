@@ -657,6 +657,8 @@ impl Interface {
             Dispatch,
         }
 
+        let mut listen_sockets = alloc::vec![];
+
         let mut result = PollResult::None;
         for item in sockets.items_mut() {
             if !item
@@ -718,13 +720,18 @@ impl Interface {
                     })
                 }
                 #[cfg(feature = "socket-tcp")]
-                Socket::Tcp(socket) => socket.dispatch(&mut self.inner, &mut |inner, (ip, tcp)| {
-                    respond(
-                        inner,
-                        PacketMeta::default(),
-                        Packet::new(ip, IpPayload::Tcp(tcp)),
-                    )
-                }),
+                Socket::Tcp(socket) => {
+                    if let Some(socket) = &mut socket.backlog {
+                        listen_sockets.push(socket as *mut SocketSet);
+                    }
+                    socket.dispatch(&mut self.inner, |inner, (ip, tcp)| {
+                        respond(
+                            inner,
+                            PacketMeta::default(),
+                            Packet::new(ip, IpPayload::Tcp(tcp)),
+                        )
+                    })
+                }
                 #[cfg(feature = "socket-dhcpv4")]
                 Socket::Dhcpv4(socket) => {
                     socket.dispatch(&mut self.inner, |inner, (ip, udp, dhcp)| {
@@ -760,6 +767,15 @@ impl Interface {
                 Ok(()) => {}
             }
         }
+
+        for sockets in listen_sockets {
+            let res = unsafe { self.socket_egress(device, &mut *sockets) };
+
+            if matches!(res, PollResult::SocketStateChanged) {
+                result = PollResult::SocketStateChanged;
+            }
+        }
+
         result
     }
 }
